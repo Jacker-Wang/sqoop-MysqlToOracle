@@ -944,7 +944,7 @@ public class ExportToOracle {
 
 在Oracle中也可以看到实际对应的表。
 
-JackerWang 于2017年8月29日上午的广州
+JackerWang 于2017年秋天（10月26日）下午的广州
 
 ----
 [个人技术站点](https://jacker-wang.github.io/)
