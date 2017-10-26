@@ -1,0 +1,2 @@
+# sqoop-MysqlToOracle
+利用sqoop分布式能力将数据从MySQL迁移到Oracle
