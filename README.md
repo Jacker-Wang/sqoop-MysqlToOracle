@@ -11,7 +11,9 @@ date: "2017-10-17 22:48"
 # 所需环境
 ---
 1 JDK+Eclipse；
+
 2 Hadoop环境（version-2.6.5）
+
 3 Sqoop1.4.6-alpher（sqoop-1.4.6.bin__hadoop-2.0.4-alpha）
 
 # 实现细节
@@ -19,10 +21,15 @@ date: "2017-10-17 22:48"
 
 ## Java实现所需maven依赖
 所需要的maven依赖包主要有：
+
 1 sqoop1.4.6版本的包（sqoop目前有版本1和版本2。sqoop1.4.6对应sqoop1，sqoop1.99.7对应于sqoop2。maven中的sqoop依赖下载不了，所以需要将sqoop-1.4.6.bin__hadoop-2.0.4-alpha中的sqoop-1.4.6.jar拷贝到你的本地仓库对应的位置）。
+
 2 连接MySQL的jar包mysql-connector-java。
+
 3 连接Oracle的jar包oracle-ojdbc7。
+
 4 hadoop基础包
+
 5 MapReduce基础包
 
 ```
@@ -87,10 +94,15 @@ date: "2017-10-17 22:48"
 ## 我的主类
 一 主类说明：
 主类主要的实现步骤如下
+
 1：读取配置文件中的Mysql，Oracle数据连接信息，HDFS目标目录，映射表名称，和映射表相关的序列名称。
+
 2：实现静态MySQL，Oracle操作类，用以建立相关表，获取外键关联表等相关数据。
+
 3：建立静态映射表（映射表作用是映射MySQL表名称到Oracle表名称，方便后续的使用）。
+
 4：数据导入函数的实现importMySQLToOracle的实现，函数是递归的，因为导入数据之前，由于约束的原因，需要先导入外键关联表的数据，所以这里需要递归建立外键关联表和导入外间关联表的数据。
+
 5：最后将数据导入的记录添加到映射表中。
 
 二 代码实现：
@@ -231,6 +243,7 @@ public class ImportData {
 ## MySQL操作
 一  MySQL操作类说明
 操作类主要是实现获取相关表的外间关联表，判断相关表是否存在等操。
+
 二  以下类主要使用JDBC来操作MySQL
 ```
 package com.ctg.odp.collect.dbloader.importToOracle;
@@ -505,7 +518,9 @@ public class OperateMysql {
 ```
 
 ## 操作Oracle实现
-以下类用来操作Oracle
+一 主要是使用JDBC来实现基本的Oracle操作
+
+二 以下类用来操作Oracle
 
 ```
 package com.ctg.odp.collect.dbloader.importToOracle;
@@ -746,8 +761,10 @@ public class OperateOracle {
 
 
 ## 将数据从MySQL迁移到HDFS
+一 主要功能：
+将数据从MySQL迁移到HDFS,形成文本文件
 
-以下是实现代码
+二 以下是代码实现
 ```
 package com.ctg.odp.collect.dbloader.sqoop;
 
@@ -819,7 +836,9 @@ public class ImportToHDFS {
 ```
 
 ## 将数据HDFS迁移到Oracle
-以下是实现代码
+一 主要功能：将数据从HDFS迁移到Oracle
+
+二 以下是实现代码
 
 ```
 
@@ -878,7 +897,9 @@ public class ExportToOracle {
 
 ## 测试环境准备
 1：Mysql服务，准备一张用作数据导入的数据表。这里使用表dbload_task_instance_run_result
+
 2：Oracle服务，开启Oracle服务。
+
 3：开启Hadoop服务。
 ## 测试步骤
 因为主类中已将数据的建表，导入，数据导入到HDFS，数据导出到Oracle这几个过程进行了集成。所以这里只需以Java Application运行程序即可。然后我们可以查看运行结果。
@@ -914,4 +935,7 @@ public class ExportToOracle {
 
 ```
 上图中字符^为程序中设置的字段分隔符（默认为英文逗号）。
-2：在Oracle中也可以看到实际对应的表。
+
+2：查看结果：
+
+在Oracle中也可以看到实际对应的表。
