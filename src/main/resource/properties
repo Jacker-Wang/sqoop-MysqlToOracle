@@ -1,0 +1,23 @@
+
+MySQLHost=132.122.1.192
+MySQLDatabase=odp
+MySQLTable=dbload_task_item
+MySQLUsername=dbsync
+MySQLPassword=dbsync
+
+
+#H3 hadoop目录
+#targetDir=/apps/odp/data/dbloadTest
+
+#本地 hadoop目录
+targetDir=hdfs://localhost:9000/hadoopTmp
+
+OracleHost=132.122.1.163
+OracleDatabase=orcl2
+OracleTable=
+OracleUsername=icrm
+OraclePassword=icrm
+
+SequenceName=map_autoIncrement_seq
+MapTableName=Map_Table
+
