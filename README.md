@@ -6,7 +6,7 @@ date: "2017-10-17 22:48"
 
 # 背景介绍
 ---
-大数据时代，海量数据的迁移会很普遍地出现在各个应用场景，本文主要讨论关系型数据库从MySQL到Oracle的海量数据迁移和切割。
+大数据时代，海量数据的迁移会很普遍地出现在各个应用场景，本文主要讨论利用Sqoop的分布式能力从关系型数据库MySQL到Oracle的海量数据迁移和切割。
 
 # 所需环境
 ---
@@ -18,6 +18,10 @@ date: "2017-10-17 22:48"
 
 # 实现细节
 ---
+
+## 代码说明
+这里只是大致介绍数据迁移实现的流程，具体代码可在[GitHub]下载
+  [GitHub]: https://github.com/Jacker-Wang/sqoop-MysqlToOracle "GitHub"
 
 ## Java实现所需maven依赖
 所需要的maven依赖包主要有：
@@ -939,3 +943,8 @@ public class ExportToOracle {
 2：查看结果：
 
 在Oracle中也可以看到实际对应的表。
+
+JackerWang 于2017年8月29日上午的广州
+
+----
+[个人技术站点](https://jacker-wang.github.io/)
