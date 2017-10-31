@@ -119,6 +119,9 @@ public class ConvertStatement {
                 ArrayList<String> bodyList = new ArrayList<String>();
                 for (String body : bodys) {
                     body = body.trim();
+                    if (body.contains(" CHARACTER SET utf8 COLLATE utf8_bin")) {
+                        body = body.replace(" CHARACTER SET utf8 COLLATE utf8_bin", "");
+                    }
                     if (body.startsWith("PRIMARY KEY")) {// 主键或外键
                         bodyList.add(body);
                         continue;
@@ -139,8 +142,32 @@ public class ConvertStatement {
                         String column = values[0];
                         String comment = values[values.length - 1];
                         extraList.add("COMMENT ON COLUMN " + tableName + "." + column + " is " + comment);
-                        bodyList.add(body.replaceAll("(?is)COMMENT\\s+\\'.*?\\'", ""));
+                        String resultBody = body.replaceAll("(?is)COMMENT\\s+\\'.*?\\'", "");
+
+                        if (resultBody.contains("DEFAULT") && body.contains("NOT NULL ENABLE")) {
+                            if (resultBody.contains("CURRENT_TIMESTAMP")) {
+                                resultBody = resultBody.replace("CURRENT_TIMESTAMP", "sysdate");
+                            }
+                            String[] temArr = resultBody.split("\\s+");
+                            String DefaultValue = temArr[temArr.length - 1].replace(",", "").trim();
+                            DefaultValue = "DEFAULT " + DefaultValue;
+                            resultBody = resultBody.replace(DefaultValue, "NOT NULL ENABLE");
+                            resultBody = resultBody.replaceFirst("NOT NULL ENABLE", DefaultValue);
+                        }
+
+                        bodyList.add(resultBody);
                     } else {
+                        // 调换默认值和是否为空的位子
+                        if (body.contains("DEFAULT") && body.contains("NOT NULL ENABLE")) {
+                            if (body.contains("CURRENT_TIMESTAMP")) {
+                                body = body.replace("CURRENT_TIMESTAMP", "sysdate");
+                            }
+                            String[] temArr = body.split("\\s+");
+                            String DefaultValue = temArr[temArr.length - 1].replace(",", "").trim();
+                            DefaultValue = "DEFAULT " + DefaultValue;
+                            body = body.replace(DefaultValue, "NOT NULL ENABLE");
+                            body = body.replaceFirst("NOT NULL ENABLE", DefaultValue);
+                        }
                         bodyList.add(body);
                     }
                 }

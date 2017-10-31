@@ -1,9 +1,9 @@
 
-MySQLHost=132.122.1.192
-MySQLDatabase=odp
-MySQLTable=dbload_task_item
-MySQLUsername=dbsync
-MySQLPassword=dbsync
+MySQLHost=10.142.233.231
+MySQLDatabase=iot_bill
+MySQLTable=
+MySQLUsername=iot_cx
+MySQLPassword=hn!$VqnR
 
 
 #H3 hadoop目录
@@ -12,11 +12,11 @@ MySQLPassword=dbsync
 #本地 hadoop目录
 targetDir=hdfs://localhost:9000/hadoopTmp
 
-OracleHost=132.122.1.163
-OracleDatabase=orcl2
+OracleHost=10.142.233.160
+OracleDatabase=bill
 OracleTable=
-OracleUsername=icrm
-OraclePassword=icrm
+OracleUsername=iotbill
+OraclePassword=iotbill
 
 SequenceName=map_autoIncrement_seq
 MapTableName=Map_Table

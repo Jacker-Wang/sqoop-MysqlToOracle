@@ -20,7 +20,6 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-
 public class DataUtil {
     private static final Log log = LogFactory.getLog(DataUtil.class);
 
@@ -39,7 +38,6 @@ public class DataUtil {
         return result;
     }
 
-
     // 使用命令行选项
     public static CommandLine getCommandLine(String[] args) {
         Options options = new Options();
@@ -53,7 +51,6 @@ public class DataUtil {
         options.addOption(new Option("td", "toDataBase", true, " oracle Database"));
         options.addOption(new Option("tu", "toUserName", true, " oracle userName"));
         options.addOption(new Option("tp", "toPassWord", true, " oracle passWord"));
-
 
         // create the command line parser
         @SuppressWarnings("deprecation")

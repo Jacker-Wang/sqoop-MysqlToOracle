@@ -26,7 +26,7 @@ public class OperateMysql {
 
     public OperateMysql(MysqlInfo mysqlInfo) {
         this.mysqlInfo = mysqlInfo;
-        URL = "jdbc:mysql://" + mysqlInfo.getMysqlHost() + ":3306/" + mysqlInfo.getMysqlDatabase()
+        URL = "jdbc:mysql://" + mysqlInfo.getMysqlHost() + ":8108/" + mysqlInfo.getMysqlDatabase()
                 + "?useUnicode=true&amp;characterEncoding=utf-8&amp;allowMultiQueries=true&amp;zeroDateTimeBehavior=convertToNull";
         LOG.info("****开始连接到MySQL......****\n");
         connection = getConnection();
@@ -48,6 +48,7 @@ public class OperateMysql {
     public Connection getConnection() {
         try {
             Class.forName(DRVIER);
+            System.out.println(URL);
             connection = DriverManager.getConnection(URL, mysqlInfo.getMysqlUserName(), mysqlInfo.getMysqlPassWord());
             LOG.info("****成功连接到MySql数据库****\n" + mysqlInfo.getMysqlDatabase());
         } catch (ClassNotFoundException e) {
@@ -181,14 +182,13 @@ public class OperateMysql {
         return result;
     }
 
-
     // 计算表的总行数
     public Integer getTableCount() {
         Integer rows = 0;
         String sql = "SELECT COUNT(*) FROM " + mysqlInfo.getMysqlTable();
         try {
-           pstm=connection.prepareStatement(sql);
-           ResultSet resultSet=pstm.executeQuery();
+            pstm = connection.prepareStatement(sql);
+            ResultSet resultSet = pstm.executeQuery();
             while (resultSet.next()) {
                 rows = resultSet.getInt(1);
             }

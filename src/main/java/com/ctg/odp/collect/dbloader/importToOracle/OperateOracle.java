@@ -27,7 +27,7 @@ public class OperateOracle {
 
     public OperateOracle(OracleInfo oracleInfo) {
         this.oracleInfo = oracleInfo;
-        URL = "jdbc:oracle:thin:@" + oracleInfo.getOracleHost() + ":1521:" + oracleInfo.getOracleDatabase();
+        URL = "jdbc:oracle:thin:@" + oracleInfo.getOracleHost() + ":8001:" + oracleInfo.getOracleDatabase();
         LOG.info("****开始连接到Oracle****\n");
         connection = getConnection();
     }
@@ -36,7 +36,7 @@ public class OperateOracle {
         this.mapTable = mapTable;
         this.sequenceName = sequenceName;
         this.oracleInfo = oracleInfo;
-        URL = "jdbc:oracle:thin:@" + oracleInfo.getOracleHost() + ":1521:" + oracleInfo.getOracleDatabase();
+        URL = "jdbc:oracle:thin:@" + oracleInfo.getOracleHost() + ":8001:" + oracleInfo.getOracleDatabase();
         LOG.info("****开始连接到Oracle****\n");
         connection = getConnection();
     }
