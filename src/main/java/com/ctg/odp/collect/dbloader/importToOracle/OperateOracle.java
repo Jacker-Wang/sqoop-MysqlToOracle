@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -61,33 +62,68 @@ public class OperateOracle {
         }
     }
 
+    // 在DATE类型字段的相关表上建立时间自动更新触发器
+    public Boolean createTriggerOnDate(String table, String col) {
+        String triggerName = table + "_" + col + "_up";
+        String createTriggerSQL = "create or replace trigger " + triggerName + " before update on " + table + " for each row begin :new." + col
+                + ".=sysdate; end;";
+        System.out.println(createTriggerSQL);
+        try {
+            Statement st = connection.createStatement();
+            int re = st.executeUpdate(createTriggerSQL);
+            return re == 1 ? true : false;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+    }
+
     // 根据给出的表名称和列的相关信息创建表
     public boolean createTable(String resultTable, String createTableSQLOnOracle) {
         if (isExistTable(resultTable)) {
-            return false;
-        } else {
-            // 在oracle中建表
-            createTableSQLOnOracle = createTableSQLOnOracle.replace(oracleInfo.getOracleTable(), resultTable);
-            createTableSQLOnOracle = createTableSQLOnOracle.replace(oracleInfo.getOracleTable().toUpperCase(), resultTable);
-            LOG.info("****开始建表，建表语句为****\n" + createTableSQLOnOracle);
-            try {
-                String[] SQLArray = createTableSQLOnOracle.split(";");
-                for (String sql : SQLArray) {
-                    sql = sql.trim();
-                    if (null != sql && !"\n".equals(sql) && !"".equals(sql)) {
+            if (dropTable(resultTable)) {
+                LOG.info("****成功删除表****\n" + resultTable);
+            } else {
+                LOG.info("****删除表失败****\n" + resultTable);
+            }
+        }
+        // 在oracle中建表
+        createTableSQLOnOracle = createTableSQLOnOracle.replace(oracleInfo.getOracleTable(), resultTable);
+        createTableSQLOnOracle = createTableSQLOnOracle.replace(oracleInfo.getOracleTable().toUpperCase(), resultTable);
+        LOG.info("****开始建表，建表语句为****\n" + createTableSQLOnOracle);
+        LOG.info("****逐条语句建表，建表语句为****\n");
+        try {
+            String[] SQLArray = createTableSQLOnOracle.split(";");
+            for (String sql : SQLArray) {
+                sql = sql.trim();
+                System.out.println(sql);
+                if (null != sql && !"\n".equals(sql) && !"".equals(sql)) {
+                    // 建立触发器语句
+                    if (sql.contains("ON UPDATE SYSDATE ")) {
+                        System.out.println(sql);
+                        String table = sql.split("\\s+")[3];
+                        String col = sql.split("\\s+")[4];
+
+                        if (createTriggerOnDate(table, col)) {
+                            LOG.info("****成功创触发器（自动更新为默认时间）****\n");
+                        }
+                    }
+                    // 其它建表语句
+                    else {
                         pstm = connection.prepareStatement(sql);
                         int result = pstm.executeUpdate();
                     }
                 }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                return false;
             }
-
-            oracleInfo.setOracleTable(resultTable);
-            LOG.info("****成功创建表****\n" + resultTable);
-            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
+
+        oracleInfo.setOracleTable(resultTable);
+        LOG.info("****成功创建表****\n" + resultTable);
+        return true;
     }
 
     // 删除映射表中数据
@@ -102,6 +138,22 @@ public class OperateOracle {
             e.printStackTrace();
             return false;
         }
+    }
+
+    // 删除对应表
+    public Boolean dropTable(String table) {
+        String dropSQL = "drop table " + table;
+        try {
+            pstm = connection.prepareStatement(dropSQL);
+            int result = pstm.executeUpdate();
+            System.out.println(result);
+            return result == 0 ? true : false;
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return false;
+        }
+
     }
 
     // 向映射表中添加数据
