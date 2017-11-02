@@ -106,9 +106,9 @@ public class DataUtil {
     public static String checkTableName(String table) {
         String tableName = table;
         // 检查表名长度是否越界
-        if (table.length() > 23) {
+        if (table.length() > 30) {
             log.warn("****你的表名长度大于最大大小，请注意!!!，表名有所更改****\n");
-            tableName = table.substring(0, 23);
+            tableName = table.substring(0, 30);
         }
         return tableName;
     }
@@ -137,5 +137,32 @@ public class DataUtil {
             result = "to_date('" + result + "','YYYY-MM-DD HH24:MI:SS')";
         }
         return result;
+    }
+
+    // 处理表名称
+    public static String handleTableName(List<String> tables, String table) {
+
+        if (tables.contains(table)) {
+            char oldLastChar = table.charAt(table.length() - 1);
+            char lastChar;
+            if (oldLastChar >= '0' && oldLastChar < '9') {
+                lastChar = (char) (oldLastChar + 1);
+                table = table.replace(oldLastChar, lastChar);
+            } else {
+                lastChar = '0';
+                if (table.length() < 29) {
+                    table = table + "_" + lastChar;
+                } else if (table.length() == 29) {
+                    table = table + lastChar;
+                } else {
+                    table = table.substring(0, 29) + lastChar;
+                }
+            }
+            return handleTableName(tables, table);
+        } else {
+            tables.add(table);
+            return table;
+        }
+
     }
 }

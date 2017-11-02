@@ -121,6 +121,8 @@ public class ConvertStatement {
                 String tail = oracleStatement.substring(matcher.end());
                 String tableName = head.split(" ")[2];
                 List<String> primaryKey = new ArrayList<String>();
+                // 建立了索引的列
+                List<String> indexs = new ArrayList<String>();
                 ArrayList<String> extraList = new ArrayList<String>();
                 ArrayList<String> bodyList = new ArrayList<String>();
                 for (String body : bodys) {
@@ -145,7 +147,9 @@ public class ConvertStatement {
                     }
                     // 解决uresignd字段
                     if (body.contains("unsigned")) {
-                        String constraintSQL = "constraint " + tableName + "_" + colName + " check (" + colName + " between 0 and 4294967295)";
+                        String consName = tableName + "_" + colName;
+                        consName = consName.length() > 30 ? consName.substring(0, 30) : consName;
+                        String constraintSQL = "constraint " + consName + " check (" + colName + " between 0 and 4294967295)";
                         body = body.replace("unsigned", "");
                         bodyList.add(constraintSQL);
                     }
@@ -158,7 +162,6 @@ public class ConvertStatement {
                             int defaultIndex = Arrays.asList(temArr).indexOf("DEFAULT");
 
                             String DefaultValue = temArr[defaultIndex + 1].trim();
-                            System.out.println("DefaultValue " + DefaultValue);
                             DefaultValue = "DEFAULT " + DefaultValue;
                             body = body.replace(DefaultValue, "NOT NULL ENABLE");
                             body = body.replaceFirst("NOT NULL ENABLE", DefaultValue);
@@ -187,7 +190,10 @@ public class ConvertStatement {
                         continue;
                     } else if (body.startsWith("KEY")) { // 普通索引
                         String[] values = body.split("\\s+");
-                        extraList.add("CREATE INDEX " + values[1] + " ON " + tableName + values[2]);
+                        if (!indexs.contains(values[2])) {
+                            extraList.add("CREATE INDEX " + values[1] + " ON " + tableName + values[2]);
+                            indexs.add(values[2]);
+                        }
                         continue;
                     } else if (body.contains(" COMMENT ")) {// 处理注释
                         String[] values = body.split(" (?=([^'\"]*('|\")[^'\"]*('|\"))*[^'\"]*$)");

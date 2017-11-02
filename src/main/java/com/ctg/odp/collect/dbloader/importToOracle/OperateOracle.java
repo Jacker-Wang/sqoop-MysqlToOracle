@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -127,11 +128,11 @@ public class OperateOracle {
     }
 
     // 删除映射表中数据
-    public boolean deleteDataFromMap(String oldTable) {
-        String insertSQL = "delete from " + mapTable + " where old_table=?";
+    public boolean deleteDataFromMap(String newTable) {
+        String insertSQL = "delete from " + mapTable + " where new_table=?";
         try {
             pstm = connection.prepareStatement(insertSQL);
-            pstm.setString(1, oldTable);
+            pstm.setString(1, newTable);
             int result = pstm.executeUpdate();
             return result == 1 ? true : false;
         } catch (SQLException e) {
@@ -213,6 +214,23 @@ public class OperateOracle {
                 e.printStackTrace();
             }
         return result;
+    }
+
+    // 获取映射表中的所有新表名称
+    public void getMapNewTables(List<String> tables) {
+        String getTablesSQL = "SELECT NEW_TABLE FROM " + mapTable;
+        try {
+            pstm = connection.prepareStatement(getTablesSQL);
+            ResultSet resultSet = pstm.executeQuery();
+            while (resultSet.next()) {
+                tables.add(resultSet.getString(1));
+            }
+
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
     }
 
     public Connection getConnection() {

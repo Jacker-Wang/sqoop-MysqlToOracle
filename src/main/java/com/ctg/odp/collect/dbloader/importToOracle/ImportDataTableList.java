@@ -19,7 +19,10 @@ public class ImportDataTableList {
     private static OperateMysql operateMysql = null;
     private static OperateOracle operateOracle = null;
 
-    private static String tablesFilePath = "C:\\Users\\Pin-Wang\\Desktop\\tables.txt";
+    // 缓存映射到oracle中新的表名称
+    private static List<String> oracleTables = new ArrayList<String>();
+
+    private static String tablesFilePath = "C:\\Users\\Pin-Wang\\Desktop\\tablesA.txt";
 
     static {
         mapTable = DataUtil.getField("MapTableName");
@@ -44,7 +47,7 @@ public class ImportDataTableList {
 
         List<String> tables = TablesListUtil.getTables(tablesFilePath);
         // tables.clear();
-        // tables.add(" i_serv_add_acc_nbr");
+        // tables.add("acm_payment");
         int oracleCursorCount = 0;
         for (String table : tables) {
             if (oracleCursorCount > 10) {
@@ -87,9 +90,22 @@ public class ImportDataTableList {
         OracleInfo oracleInfo = operateOracle.getOracleInfo();
         MysqlInfo mysqlInfo = operateMysql.getMysqlInfo();
         String resultTable = DataUtil.checkTableName(oracleInfo.getOracleTable());
+
+        // 初始化oracleTables
+        operateOracle.getMapNewTables(oracleTables);
+
+        // oracle中已经存在此表，则更换表名称
+        resultTable = DataUtil.handleTableName(oracleTables, resultTable);
+
         // 得到oracle建表语句
         List<String> referenceTables = new ArrayList<String>();
         String createTableSQLOnOracle = operateMysql.getCreateTableSQLOnOracle(referenceTables);
+
+        // MySQL不存在此表
+        if (null == createTableSQLOnOracle) {
+            LOG.info("****获取表 " + mysqlInfo.getMysqlTable() + " 的建表语句失败 ****\n");
+            return false;
+        }
 
         // 检查外键关联表是否存在
         for (String referenceTable : referenceTables) {
@@ -107,7 +123,7 @@ public class ImportDataTableList {
         }
 
         if (operateOracle.createTable(resultTable, createTableSQLOnOracle)) {
-            if (operateOracle.deleteDataFromMap(mysqlInfo.getMysqlTable())) {
+            if (operateOracle.deleteDataFromMap(oracleInfo.getOracleTable())) {
                 LOG.info("****表记录 " + mysqlInfo.getMysqlTable() + " 从映射表中删除****\n");
 
             }
