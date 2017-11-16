@@ -22,7 +22,7 @@ public class ImportDataTableList {
     // 缓存映射到oracle中新的表名称
     private static List<String> oracleTables = new ArrayList<String>();
 
-    private static String tablesFilePath = "C:\\Users\\Pin-Wang\\Desktop\\tablesA.txt";
+    private static String tablesFilePath = "C:\\Users\\Pin-Wang\\Desktop\\tables.txt";
 
     static {
         mapTable = DataUtil.getField("MapTableName");
@@ -47,7 +47,7 @@ public class ImportDataTableList {
 
         List<String> tables = TablesListUtil.getTables(tablesFilePath);
         // tables.clear();
-        // tables.add("acm_payment");
+        // tables.add("i_prod_offr_inst".toLowerCase());
         int oracleCursorCount = 0;
         for (String table : tables) {
             if (oracleCursorCount > 10) {
@@ -67,6 +67,11 @@ public class ImportDataTableList {
             importMySQLToOracle(operateMysql, operateOracle, "");
             oracleCursorCount++;
         }
+
+        // System.out.println("没有主键");
+        // for (String table : ConvertStatement.getNoPrimaryKeyList()) {
+        // System.out.println(table);
+        // }
 
         // if (mysqlInfo.getMysqlTable() == null) {
         // List<String> tablesList = operateMysql.getAllTables();
@@ -95,7 +100,7 @@ public class ImportDataTableList {
         operateOracle.getMapNewTables(oracleTables);
 
         // oracle中已经存在此表，则更换表名称
-        resultTable = DataUtil.handleTableName(oracleTables, resultTable);
+        // resultTable = DataUtil.handleTableName(oracleTables, resultTable);
 
         // 得到oracle建表语句
         List<String> referenceTables = new ArrayList<String>();
@@ -108,19 +113,19 @@ public class ImportDataTableList {
         }
 
         // 检查外键关联表是否存在
-        for (String referenceTable : referenceTables) {
-            if (!operateOracle.isExistTable(referenceTable)) {
-                // 不存在外键关联表，则要先创建关联表
-                MysqlInfo mysqlInfoReference = operateMysql.getMysqlInfo();
-                mysqlInfoReference.setMysqlTable(referenceTable);
-                operateMysql.setMysqlInfo(mysqlInfoReference);
-
-                OracleInfo oracleInfoReference = operateOracle.getOracleInfo();
-                oracleInfoReference.setOracleTable(referenceTable);
-                operateOracle.setOracleInfo(oracleInfoReference);
-                importMySQLToOracle(operateMysql, operateOracle, targetDir);
-            }
-        }
+        // for (String referenceTable : referenceTables) {
+        // if (!operateOracle.isExistTable(referenceTable)) {
+        // // 不存在外键关联表，则要先创建关联表
+        // MysqlInfo mysqlInfoReference = operateMysql.getMysqlInfo();
+        // mysqlInfoReference.setMysqlTable(referenceTable);
+        // operateMysql.setMysqlInfo(mysqlInfoReference);
+        //
+        // OracleInfo oracleInfoReference = operateOracle.getOracleInfo();
+        // oracleInfoReference.setOracleTable(referenceTable);
+        // operateOracle.setOracleInfo(oracleInfoReference);
+        // importMySQLToOracle(operateMysql, operateOracle, targetDir);
+        // }
+        // }
 
         if (operateOracle.createTable(resultTable, createTableSQLOnOracle)) {
             if (operateOracle.deleteDataFromMap(oracleInfo.getOracleTable())) {

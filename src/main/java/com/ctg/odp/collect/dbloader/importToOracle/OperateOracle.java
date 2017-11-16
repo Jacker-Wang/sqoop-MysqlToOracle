@@ -66,8 +66,8 @@ public class OperateOracle {
     // 在DATE类型字段的相关表上建立时间自动更新触发器
     public Boolean createTriggerOnDate(String table, String col) {
         String triggerName = table + "_" + col + "_up";
-        String createTriggerSQL = "create or replace trigger " + triggerName + " before update on " + table + " for each row begin :new." + col
-                + ".=sysdate; end;";
+        String createTriggerSQL = "create or replace trigger " + triggerName + " before update on " + table + " for each row begin select sysdate into :new."
+                + col + " from dual; end;";
         System.out.println(createTriggerSQL);
         try {
             Statement st = connection.createStatement();
@@ -88,6 +88,9 @@ public class OperateOracle {
             } else {
                 LOG.info("****删除表失败****\n" + resultTable);
             }
+        }
+        if (!createTableSQLOnOracle.contains("PRIMARY KEY")) {
+            return false;
         }
         // 在oracle中建表
         createTableSQLOnOracle = createTableSQLOnOracle.replace(oracleInfo.getOracleTable(), resultTable);

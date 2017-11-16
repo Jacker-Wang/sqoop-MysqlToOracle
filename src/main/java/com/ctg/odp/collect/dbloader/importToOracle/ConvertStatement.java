@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 public class ConvertStatement {
 
     private static final Logger logger = Logger.getLogger(ConvertStatement.class);
+    static List<String> noPrimaryKeyList = new ArrayList<String>();
 
     /**
      * Converts a statement from MySql to Oracle
@@ -66,6 +67,7 @@ public class ConvertStatement {
         replacements.put("\\;", "/");
 
         String oracleStatement = statement.trim();
+        System.out.println("原始oracleStatement\n " + oracleStatement);
 
         for (Map.Entry<String, String> vkPairs : replacements.entrySet()) {
             oracleStatement = oracleStatement.replaceAll("(?is)" + vkPairs.getKey(), vkPairs.getValue());
@@ -111,7 +113,6 @@ public class ConvertStatement {
         // 替换联合索引的逗号，为更好匹配正则表达式
         oracleStatement = oracleStatement.replaceAll(",(?=([\\w_,]*\\)))", "^");
 
-        System.out.println("原始oracleStatement\n " + oracleStatement);
         if (lowerStatement.startsWith("create")) {
             Pattern pattern = Pattern.compile("(?is)(?<=\\().*(?=\\))");
             Matcher matcher = pattern.matcher(oracleStatement);
@@ -120,15 +121,24 @@ public class ConvertStatement {
                 String bodys[] = matcher.group().split(",(?=([^'\"]*('|\")[^'\"]*('|\"))*[^'\"]*$)");
                 String tail = oracleStatement.substring(matcher.end());
                 String tableName = head.split(" ")[2];
+
+                if (!oracleStatement.contains("PRIMARY KEY")) {
+                    noPrimaryKeyList.add(tableName);
+                }
+
                 List<String> primaryKey = new ArrayList<String>();
                 // 建立了索引的列
                 List<String> indexs = new ArrayList<String>();
                 ArrayList<String> extraList = new ArrayList<String>();
                 ArrayList<String> bodyList = new ArrayList<String>();
+                String SHARD_ID = null;
                 for (String body : bodys) {
+                    body = body.trim();
+                    if (SHARD_ID == null) {
+                        SHARD_ID = body.startsWith("SHARD_ID") ? "SHARD_ID" : null;
+                    }
                     body = body.replaceAll("\\^", ",");
                     System.out.println(body);
-                    body = body.trim();
                     String colName = body.split("\\s+")[0];
                     // 修改默认时间格式
                     body = body.replace("'0000-00-00 00:00:00'", "to_date('2017','YYYY')");
@@ -141,31 +151,45 @@ public class ConvertStatement {
                     Pattern patternVarLength = Pattern.compile("(?is)(?<=VARCHAR2\\()\\d+(?=\\))");
                     Matcher patternVarMather = patternVarLength.matcher(body);
                     while (patternVarMather.find()) {
-                        Integer length = Integer.valueOf(patternVarMather.group());
+                        Integer length = 2 * Integer.valueOf(patternVarMather.group());
                         length = length > 4000 ? 4000 : length;
                         body = body.replace(patternVarMather.group(), String.valueOf(length));
+                        body = body.replace("VARCHAR4", "VARCHAR2");
                     }
+                    // 让char字段长度加倍
+                    if (body.contains(" char(")) {
+                        int leftIndex = body.indexOf("char(") + 5;
+                        int rightIndex = body.indexOf(")");
+                        String lenString = body.substring(leftIndex, rightIndex);
+                        String resultLenString = String.valueOf(2 * Integer.valueOf(lenString));
+                        body = body.replace("char(" + lenString + ")", "char(" + resultLenString + ")");
+                    }
+
                     // 解决uresignd字段
                     if (body.contains("unsigned")) {
                         String consName = tableName + "_" + colName;
                         consName = consName.length() > 30 ? consName.substring(0, 30) : consName;
-                        String constraintSQL = "constraint " + consName + " check (" + colName + " between 0 and 4294967295)";
+                        String constraintSQL = "constraint " + consName + " check (" + colName + " between 0 and 18446744073709551615)";
                         body = body.replace("unsigned", "");
                         bodyList.add(constraintSQL);
                     }
 
                     // 调换默认值和是否为空表示的位置
-                    if (body.contains("DEFAULT") && body.contains("NOT NULL ENABLE")) {
-                        String[] temArr = body.split("\\s+");
-                        // 过滤掉列名称含有DEFAULT的
-                        if (!temArr[0].contains("DEFAULT")) {
-                            int defaultIndex = Arrays.asList(temArr).indexOf("DEFAULT");
+                    if (body.contains("NOT NULL ENABLE")) {
+                        if (body.contains("DEFAULT") && body.contains("NOT NULL ENABLE")) {
+                            String[] temArr = body.split("\\s+");
+                            // 过滤掉列名称含有DEFAULT的
+                            if (!temArr[0].contains("DEFAULT")) {
+                                int defaultIndex = Arrays.asList(temArr).indexOf("DEFAULT");
 
-                            String DefaultValue = temArr[defaultIndex + 1].trim();
-                            DefaultValue = "DEFAULT " + DefaultValue;
-                            body = body.replace(DefaultValue, "NOT NULL ENABLE");
-                            body = body.replaceFirst("NOT NULL ENABLE", DefaultValue);
+                                String DefaultValue = temArr[defaultIndex + 1].trim();
+                                DefaultValue = "DEFAULT " + DefaultValue;
+                                body = body.replace(DefaultValue, "NOT NULL ENABLE");
+                                body = body.replaceFirst("NOT NULL ENABLE", DefaultValue);
+                            }
                         }
+                        // 去掉非空约束
+                        body = body.replaceFirst("NOT NULL ENABLE", "");
                     }
 
                     // 处理自动更新的DATE类型
@@ -175,13 +199,17 @@ public class ConvertStatement {
                         extraList.add(createTriggerSQL);
                     }
                     if (body.startsWith("PRIMARY KEY")) {// 主键或外键
-                        primaryKey.add(body.split("\\s+")[2]);
-                        bodyList.add(body);
+                        String[] arr = body.split("\\s+");
+                        primaryKey.add(arr[2]);
+                        String primary_key = arr[2].substring(1, arr[2].length() - 1);
+                        String pKeyString = "PRIMARY KEY (";
+                        pKeyString = SHARD_ID == null ? pKeyString + primary_key + ")" : pKeyString + SHARD_ID + "," + primary_key + ")";
+                        bodyList.add(pKeyString);
                         continue;
                     } else if (body.startsWith("CONSTRAINT") && body.contains("FOREIGN KEY")) {
                         String[] values = body.split("\\s+");
                         referenceTables.add(values[6]);
-                        bodyList.add(body);
+                        // bodyList.add(body);
                     } else if (body.startsWith("UNIQUE KEY")) {// 唯一索引
                         String[] values = body.split("\\s+");
                         if (!primaryKey.contains(values[3])) {
@@ -222,4 +250,13 @@ public class ConvertStatement {
         }
         return oracleStatement;
     }
+
+    public static List<String> getNoPrimaryKeyList() {
+        return noPrimaryKeyList;
+    }
+
+    public static void setNoPrimaryKeyList(List<String> noPrimaryKeyList) {
+        ConvertStatement.noPrimaryKeyList = noPrimaryKeyList;
+    }
+
 }
